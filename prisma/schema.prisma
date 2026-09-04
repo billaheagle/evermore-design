@@ -1,0 +1,170 @@
+// Prisma schema for Evermore Design.
+// The public site and the /admin panel both read and write through this.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Publication state, shared by Project and Testimonial.
+//   PUBLISHED – live on the public site
+//   DRAFT     – work in progress, never shown publicly
+//   HIDDEN    – was published, temporarily pulled from the site
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  name        String
+  location    String        @default("")
+  year        String        @default("")
+  category    String        @default("Residential")
+  scope       String        @default("")
+  concept     String        @default("")
+  heroImage   String
+  beforeImage String?
+  afterImage  String?
+  // Only PUBLISHED projects appear on the public site.
+  status      ProjectStatus @default(PUBLISHED)
+  // Lower numbers show first on the site and in the admin list.
+  sortOrder   Int           @default(0)
+  gallery     GalleryImage[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, sortOrder])
+}
+
+// The managed list of project categories shown in the admin form's
+// dropdown. `Project.category` stays a plain string (denormalised) so a
+// deleted category never orphans a project — renaming one cascades to the
+// projects that use it (see updateCategoryAction).
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([sortOrder])
+}
+
+model GalleryImage {
+  id        String  @id @default(cuid())
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  src       String
+  // `wide` images span both columns in the project gallery grid.
+  wide      Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  @@index([projectId, sortOrder])
+}
+
+// The "In their words" client quotes, editable in the admin panel. Only
+// PUBLISHED ones appear on the site.
+model Testimonial {
+  id        String        @id @default(cuid())
+  quote     String
+  name      String
+  location  String        @default("")
+  status    ProjectStatus @default(PUBLISHED)
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status, sortOrder])
+}
+
+// "How we get involved" — the services list.
+model Service {
+  id          String        @id @default(cuid())
+  title       String
+  description String        @default("")
+  status      ProjectStatus @default(PUBLISHED)
+  sortOrder   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, sortOrder])
+}
+
+// "How a project runs" — the numbered process stages. The stage number is
+// derived from position, not stored.
+model ProcessStep {
+  id          String        @id @default(cuid())
+  title       String
+  description String        @default("")
+  status      ProjectStatus @default(PUBLISHED)
+  sortOrder   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, sortOrder])
+}
+
+// Single-row table (id is always "singleton") holding the editable copy for
+// the hero, about, CTA and contact details.
+model SiteSettings {
+  id String @id @default("singleton")
+
+  heroEyebrow  String @default("")
+  heroKicker   String @default("")
+  heroHeadline String @default("")
+  heroCtaLabel String @default("")
+  heroSwatches Json? // [{ image, material, note }]
+
+  // Section eyebrows + headings (the number prefixes stay in code).
+  patinaEyebrow       String @default("")
+  patinaHeading       String @default("")
+  workEyebrow         String @default("")
+  workHeading         String @default("")
+  servicesEyebrow     String @default("")
+  servicesHeading     String @default("")
+  processEyebrow      String @default("")
+  processHeading      String @default("")
+  testimonialsHeading String @default("")
+
+  aboutEyebrow      String  @default("")
+  aboutHeading      String  @default("")
+  aboutBody         String  @default("")
+  aboutImage        String  @default("")
+  aboutImageCaption String  @default("")
+  aboutFacts        Json? // [{ label, value }]
+
+  ctaEyebrow   String @default("")
+  ctaHeading   String @default("")
+  ctaBody      String @default("")
+  ctaLinkLabel String @default("")
+
+  email           String @default("")
+  phone           String @default("")
+  whatsappNumber  String @default("")
+  whatsappMessage String @default("")
+  instagramUrl    String @default("")
+  addressLine     String @default("")
+  footerBlurb     String @default("")
+
+  updatedAt DateTime @updatedAt
+}
+
+// Messages submitted through the site's contact form.
+model Inquiry {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  projectType String   @default("")
+  message     String
+  handled     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([handled, createdAt])
+}

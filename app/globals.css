@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  /* No `scroll-behavior: smooth` here: under Next 16 it silently breaks
+     programmatic `window.scrollTo`, and in-page anchor scrolling is handled
+     by lib/scrollToSection.js which passes `behavior: "smooth"` itself. */
+  scroll-padding-top: 6rem;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: #f4f1ea;
+  color: #1a1712;
+}
+
+::selection {
+  background: #a85d3e;
+  color: #f4f1ea;
+}
+
+:focus-visible {
+  outline: 2px solid #a85d3e;
+  outline-offset: 3px;
+}
+
+/* Paper grain. A single fixed layer over the whole document so every
+   section sits on the same stock instead of looking screen-flat. Kept
+   very low so it reads as texture, not noise. */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark) {
+  /* The site commits to a light "paper" look; no dark variant, but keep the
+     grain from inverting oddly if a UA forces blending. */
+  .grain::after {
+    mix-blend-mode: multiply;
+  }
+}
+
+/* Headings read better with balanced wrapping; body copy with `pretty`
+   avoids single-word last lines. Progressive — ignored where unsupported. */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+
+/* The serif carries display text — proportional oldstyle figures and real
+   ligatures make it feel set rather than rendered. */
+.font-display {
+  font-feature-settings: "liga" 1, "onum" 1, "kern" 1;
+}
+
+/* Archive index label: mono, wide-tracked, uppercase — the running caption
+   voice of the whole redesign. Pair with a catalogue number where possible
+   (e.g. "02 — Before / After"). */
+.archive-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1.2;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+/* Small caps label above section headings. Understated: a short tick, tight
+   tracking, muted — not a loud copper bar. */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.eyebrow::before {
+  content: "";
+  width: 18px;
+  height: 1px;
+  background: currentColor;
+  display: inline-block;
+  opacity: 0.5;
+}
+
+/* Hairline section divider for the flat sections (those not using a curved
+   panel), so the page has rhythm without every block being a rounded slab. */
+.rule {
+  height: 1px;
+  width: 100%;
+  background: currentColor;
+  opacity: 0.12;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Contain stray horizontal overflow (full-bleed helpers) on the content
+   wrapper — NOT on <html>/<body>. Putting `overflow` on the root element
+   makes the document itself unable to scroll programmatically (`clip`) or
+   breaks `position: sticky` (`hidden`); the wrapper does neither. `clip` is
+   not a scroll container, so the pinned sections still stick to the
+   viewport. */
+.grain {
+  overflow-x: clip;
+}
+
+/* Clip-mask reveal used across the redesign: a line/word rises out from
+   behind a hard edge rather than fading up. The wrapper clips; the child
+   is what moves (framer-motion drives the transform). */
+.mask-line {
+  display: block;
+  overflow: hidden;
+}
+
+/* Full-bleed helper — break a child out of a centred container to the
+   viewport edge without the page scrolling sideways. */
+.bleed-x {
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}

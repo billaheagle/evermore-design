@@ -1,0 +1,16 @@
+node_modules
+.next
+out
+.DS_Store
+
+# Claude Code local skills/config
+.claude
+
+# env files (keep .env.example tracked)
+.env
+.env.local
+.env.*.local
+
+# admin-uploaded images
+/public/uploads/*
+!/public/uploads/.gitkeep
