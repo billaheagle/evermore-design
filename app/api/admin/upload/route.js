@@ -1,11 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 const ALLOWED = {
   "image/jpeg": "jpg",
@@ -50,11 +48,19 @@ export async function POST(request) {
     return NextResponse.json({ error: "File is larger than 10 MB" }, { status: 413 });
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const filename = `${slugifyBase(file.name)}-${randomUUID().slice(0, 8)}.${ext}`;
+  const key = `uploads/${slugifyBase(file.name)}-${randomUUID().slice(0, 8)}.${ext}`;
 
-  await mkdir(UPLOAD_DIR, { recursive: true });
-  await writeFile(path.join(UPLOAD_DIR, filename), buffer);
-
-  return NextResponse.json({ url: `/uploads/${filename}` });
+  try {
+    const blob = await put(key, file, {
+      access: "public",
+      contentType: file.type,
+    });
+    return NextResponse.json({ url: blob.url });
+  } catch (err) {
+    console.error("Blob upload failed:", err);
+    return NextResponse.json(
+      { error: "Upload failed. Is the Blob store connected (BLOB_READ_WRITE_TOKEN)?" },
+      { status: 500 }
+    );
+  }
 }
