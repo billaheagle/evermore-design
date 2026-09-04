@@ -6,8 +6,11 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // Pooled connection — used by the app at runtime (serverless-friendly).
+  url       = env("DATABASE_URL")
+  // Direct connection — used by `prisma migrate` / `db push` only.
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 // Publication state, shared by Project and Testimonial.
