@@ -14,3 +14,4 @@ out
 # admin-uploaded images
 /public/uploads/*
 !/public/uploads/.gitkeep
+.neon
