@@ -59,7 +59,10 @@ export async function POST(request) {
   } catch (err) {
     console.error("Blob upload failed:", err);
     return NextResponse.json(
-      { error: "Upload failed. Is the Blob store connected (BLOB_READ_WRITE_TOKEN)?" },
+      {
+        error: `Upload failed: ${err?.message || err}`,
+        hasToken: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+      },
       { status: 500 }
     );
   }
