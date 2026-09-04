@@ -28,7 +28,7 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata = {
-  metadataBase: new URL("https://evermore.design"),
+  metadataBase: new URL("https://evermore-design.com"),
   title: {
     default: "Evermore Design — Interiors Built to Outlast the Trend",
     template: "%s — Evermore Design",
@@ -45,7 +45,7 @@ export const metadata = {
     title: "Evermore Design — Interiors Built to Outlast the Trend",
     description:
       "A Jakarta-based interior design studio shaping spaces around materials that improve with age.",
-    url: "https://evermore.design",
+    url: "https://evermore-design.com",
     siteName: "Evermore Design",
     images: [
       {
