@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { submitInquiryAction } from "@/app/admin/actions";
+import SelectField from "@/components/ui/SelectField";
 
 const PROJECT_TYPES = [
   "Full home",
@@ -101,24 +102,14 @@ export default function ContactForm() {
         </div>
       </div>
 
-      <div>
-        <label htmlFor="cf-type" className={label}>
-          What kind of project?
-        </label>
-        <select
-          id="cf-type"
-          className={`${field} appearance-none [&>option]:text-ink`}
-          value={form.projectType}
-          onChange={(e) => set("projectType", e.target.value)}
-        >
-          <option value="">Choose one</option>
-          {PROJECT_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-      </div>
+      <SelectField
+        id="cf-type"
+        label="What kind of project?"
+        options={PROJECT_TYPES}
+        value={form.projectType}
+        onChange={(v) => set("projectType", v)}
+        placeholder="Choose one"
+      />
 
       <div>
         <label htmlFor="cf-message" className={label}>
