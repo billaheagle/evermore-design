@@ -1,4 +1,5 @@
 import { Fraunces, Manrope, IBM_Plex_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 // Fraunces carries every display line now — a variable serif with real
@@ -66,7 +67,10 @@ export default function RootLayout({ children }) {
       lang="en"
       className={`${display.variable} ${sans.variable} ${mono.variable}`}
     >
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
