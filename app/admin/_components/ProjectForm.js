@@ -33,6 +33,8 @@ export default function ProjectForm({ initial, categories = [] }) {
     year: initial?.year || "",
     category: initial?.category || categoryOptions[0] || "Residential",
     scope: initial?.scope || "",
+    client: initial?.client || "",
+    budget: initial?.budget || "",
     concept: initial?.concept || "",
     heroImage: initial?.heroImage || "",
     beforeImage: initial?.beforeImage || "",
@@ -74,6 +76,8 @@ export default function ProjectForm({ initial, categories = [] }) {
         year: form.year,
         category: form.category,
         scope: form.scope,
+        client: form.client,
+        budget: form.budget,
         concept: form.concept,
         heroImage: form.heroImage,
         beforeImage: form.beforeImage,
@@ -195,6 +199,26 @@ export default function ProjectForm({ initial, categories = [] }) {
             value={form.scope}
             onChange={(e) => set("scope", e.target.value)}
             placeholder="Full Interior + Renovation"
+          />
+        </label>
+
+        <label className="block">
+          <span className={labelText}>Client</span>
+          <input
+            className={field}
+            value={form.client}
+            onChange={(e) => set("client", e.target.value)}
+            placeholder="Optional — hidden if left blank"
+          />
+        </label>
+
+        <label className="block">
+          <span className={labelText}>Budget</span>
+          <input
+            className={field}
+            value={form.budget}
+            onChange={(e) => set("budget", e.target.value)}
+            placeholder="Optional — hidden if left blank"
           />
         </label>
 

@@ -96,6 +96,8 @@ export async function saveProjectAction(input) {
     year: String(input?.year || "").trim(),
     category: String(input?.category || "Residential").trim() || "Residential",
     scope: String(input?.scope || "").trim(),
+    client: String(input?.client || "").trim(),
+    budget: String(input?.budget || "").trim(),
     concept: String(input?.concept || "").trim(),
     heroImage,
     beforeImage: String(input?.beforeImage || "").trim() || null,

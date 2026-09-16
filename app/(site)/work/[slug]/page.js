@@ -44,6 +44,8 @@ export default async function ProjectPage({ params }) {
     ["Year", project.year],
     ["Category", project.category],
     ["Scope", project.scope],
+    ["Client", project.client],
+    ["Budget", project.budget],
   ].filter(([, v]) => v);
 
   return (

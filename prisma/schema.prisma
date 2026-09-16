@@ -31,6 +31,10 @@ model Project {
   year        String        @default("")
   category    String        @default("Residential")
   scope       String        @default("")
+  // Optional — hidden on the public project page when left blank.
+  client      String        @default("")
+  // Optional — hidden on the public project page when left blank.
+  budget      String        @default("")
   concept     String        @default("")
   heroImage   String
   beforeImage String?
