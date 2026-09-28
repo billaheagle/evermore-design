@@ -12,6 +12,7 @@ import {
 } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { deleteUploadedFiles } from "@/lib/uploads";
+import { MAX_HERO_VIDEOS } from "@/lib/heroVideos";
 
 // ---- auth ------------------------------------------------------------------
 
@@ -388,12 +389,93 @@ export async function setStepStatusAction(formData) {
   revalidatePath("/admin/process");
 }
 
+// ---- hero videos -----------------------------------------------------
+
+// `input` is a plain object from the admin form:
+//   { id?, src, poster, caption, note, projectId, status }
+// Only `src` is required — a clip can go up with no caption or link.
+export async function saveHeroVideoAction(input) {
+  await assertAuthed();
+
+  const src = String(input?.src || "").trim();
+  if (!src) return { error: "Upload a video first." };
+
+  const projectId = String(input?.projectId || "").trim() || null;
+  if (projectId) {
+    const exists = await prisma.project.findUnique({ where: { id: projectId } });
+    if (!exists) return { error: "That project no longer exists." };
+  }
+
+  const data = {
+    src,
+    poster: String(input?.poster || "").trim(),
+    caption: String(input?.caption || "").trim(),
+    note: String(input?.note || "").trim(),
+    projectId,
+    status: normalizeStatus(input?.status),
+  };
+
+  const id = input?.id ? String(input.id) : null;
+  if (id) {
+    const prev = await prisma.heroVideo.findUnique({ where: { id } });
+    await prisma.heroVideo.update({ where: { id }, data });
+    if (prev) {
+      await deleteUploadedFiles(
+        [prev.src, prev.poster].filter((u) => u && u !== data.src && u !== data.poster)
+      );
+    }
+  } else {
+    const count = await prisma.heroVideo.count();
+    if (count >= MAX_HERO_VIDEOS) {
+      return { error: `The hero holds at most ${MAX_HERO_VIDEOS} videos. Delete one first.` };
+    }
+    await prisma.heroVideo.create({ data: { ...data, sortOrder: count } });
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin/hero-videos");
+  redirect("/admin/hero-videos");
+}
+
+export async function deleteHeroVideoAction(formData) {
+  await assertAuthed();
+  const id = String(formData.get("id") || "");
+  if (!id) return;
+  const video = await prisma.heroVideo.findUnique({ where: { id } });
+  if (!video) return;
+  await prisma.heroVideo.delete({ where: { id } });
+  await deleteUploadedFiles([video.src, video.poster]);
+  revalidatePath("/");
+  revalidatePath("/admin/hero-videos");
+}
+
+export async function setHeroVideoStatusAction(formData) {
+  await assertAuthed();
+  const id = String(formData.get("id") || "");
+  if (id)
+    await prisma.heroVideo.update({
+      where: { id },
+      data: { status: normalizeStatus(formData.get("status")) },
+    });
+  revalidatePath("/");
+  revalidatePath("/admin/hero-videos");
+}
+
 // ---- reorder (shared ↑ / ↓ buttons) ---------------------------------
 
 const REORDER_MODELS = {
   service: (p) => p.service,
   processStep: (p) => p.processStep,
   testimonial: (p) => p.testimonial,
+  heroVideo: (p) => p.heroVideo,
+};
+
+// Admin list page for each reorderable entity.
+const REORDER_PATHS = {
+  service: "/admin/services",
+  processStep: "/admin/process",
+  testimonial: "/admin/testimonials",
+  heroVideo: "/admin/hero-videos",
 };
 
 export async function moveEntityAction(formData) {
@@ -422,7 +504,7 @@ export async function moveEntityAction(formData) {
   );
 
   revalidatePath("/");
-  revalidatePath(`/admin/${entity === "processStep" ? "process" : entity + "s"}`);
+  revalidatePath(REORDER_PATHS[entity]);
 }
 
 // ---- site settings ------------------------------------------------

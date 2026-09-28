@@ -12,6 +12,7 @@ import {
 import { handleSectionNav } from "@/lib/scrollToSection";
 import { accentText } from "@/lib/accentText";
 import { cn } from "@/lib/cn";
+import HeroVideoCarousel from "./HeroVideoCarousel";
 
 const lineVariants = {
   hidden: { y: "108%" },
@@ -25,7 +26,7 @@ const lineVariants = {
   }),
 };
 
-export default function Hero({ settings = {} }) {
+export default function Hero({ settings = {}, videos = [] }) {
   const sectionRef = useRef(null);
   const reduce = useReducedMotion();
 
@@ -33,6 +34,8 @@ export default function Hero({ settings = {} }) {
     .split("\n")
     .map((l) => l.trim())
     .filter(Boolean);
+
+  const hasVideos = videos.length > 0;
 
   const swatches = (
     Array.isArray(settings.heroSwatches) ? settings.heroSwatches : []
@@ -59,6 +62,30 @@ export default function Hero({ settings = {} }) {
   const ribbonScale = useTransform(scrollYProgress, [0, 1], [1, reduce ? 1 : 1.14]);
   const ribbonX = useTransform(scrollYProgress, [0, 1], ["0%", reduce ? "0%" : "-8%"]);
 
+  const headline = (
+    <motion.h1
+      style={{ y: headlineY, opacity: headlineOpacity }}
+      className="font-display font-light leading-[0.9] tracking-[-0.02em] text-noir lg:shrink-0"
+    >
+      {headlineLines.map((line, i) => (
+        <span key={i} className="mask-line">
+          <motion.span
+            custom={i}
+            variants={reduce ? undefined : lineVariants}
+            initial={reduce ? false : "hidden"}
+            animate={reduce ? false : "visible"}
+            className={
+              "block text-[clamp(2.9rem,10.5vw,9rem)] " +
+              (i === headlineLines.length - 1 && i > 0 ? "pl-[0.1em]" : "")
+            }
+          >
+            {accentText(line)}
+          </motion.span>
+        </span>
+      ))}
+    </motion.h1>
+  );
+
   return (
     <section
       ref={sectionRef}
@@ -69,33 +96,30 @@ export default function Hero({ settings = {} }) {
       <div className="pointer-events-none absolute inset-x-4 bottom-4 top-[68px] border border-noir/10 md:inset-x-6 md:bottom-6 md:top-[76px]" />
 
       <div className="relative mx-auto flex min-h-[100svh] w-full max-w-[1600px] flex-col justify-between px-6 pb-7 pt-24 md:px-[6vw] md:pb-9 md:pt-28">
-        {/* ── Headline ─────────────────────────────────────────────── */}
-        <motion.h1
-          style={{ y: headlineY, opacity: headlineOpacity }}
-          className="font-display font-light leading-[0.9] tracking-[-0.02em] text-noir"
-        >
-          {headlineLines.map((line, i) => (
-            <span key={i} className="mask-line">
-              <motion.span
-                custom={i}
-                variants={reduce ? undefined : lineVariants}
-                initial={reduce ? false : "hidden"}
-                animate={reduce ? false : "visible"}
-                className={
-                  "block text-[clamp(2.9rem,10.5vw,9rem)] " +
-                  (i === headlineLines.length - 1 && i > 0 ? "pl-[0.1em]" : "")
-                }
-              >
-                {accentText(line)}
-              </motion.span>
-            </span>
-          ))}
-        </motion.h1>
+        {hasVideos ? (
+          /* ── Headline + clip carousel ──────────────────────────────
+             Stacked on phones/tablets (the frame fills the width at 16:9);
+             from lg the clips sit beside the headline, dropped to its
+             second line so the words stay the first thing read. */
+          <div className="flex flex-col gap-8 pb-8 sm:gap-10 lg:flex-row lg:items-start lg:gap-14">
+            {headline}
+            <motion.div
+              initial={reduce ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.9, duration: 1 }}
+              className="min-w-0 lg:flex-1 lg:pt-[min(10.5vw,150px)]"
+            >
+              <HeroVideoCarousel videos={videos} />
+            </motion.div>
+          </div>
+        ) : (
+          headline
+        )}
 
         {/* ── Material ribbon ──────────────────────────────────────────
             Portrait: a 2×2 grid that fills the column. sm+ : the horizontal
             strip that widens on the first scroll. */}
-        {swatches.length > 0 && (
+        {!hasVideos && swatches.length > 0 && (
           <motion.div
             initial={reduce ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}

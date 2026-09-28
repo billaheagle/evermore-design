@@ -44,6 +44,7 @@ model Project {
   // Lower numbers show first on the site and in the admin list.
   sortOrder   Int           @default(0)
   gallery     GalleryImage[]
+  heroVideos  HeroVideo[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -83,6 +84,28 @@ model Testimonial {
   quote     String
   name      String
   location  String        @default("")
+  status    ProjectStatus @default(PUBLISHED)
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status, sortOrder])
+}
+
+// Short landscape clips that play in the homepage hero carousel (at most 5
+// PUBLISHED ones are shown). Everything but the video itself is optional:
+// the caption row hides what is blank, and "View project" only appears when
+// a project is linked.
+model HeroVideo {
+  id        String        @id @default(cuid())
+  src       String
+  // A still shown while the video loads; generated from the first frame on
+  // upload unless the admin supplies one.
+  poster    String        @default("")
+  caption   String        @default("")
+  note      String        @default("")
+  project   Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId String?
   status    ProjectStatus @default(PUBLISHED)
   sortOrder Int           @default(0)
   createdAt DateTime      @default(now())

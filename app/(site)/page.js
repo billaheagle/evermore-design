@@ -8,6 +8,7 @@ import About from "@/components/sections/About";
 import CTA from "@/components/sections/CTA";
 import { getProjects, getCategories, getPatinaProjects } from "@/lib/projects";
 import { getPublishedTestimonials } from "@/lib/testimonials";
+import { getHeroVideos } from "@/lib/heroVideos";
 import {
   getPublishedServices,
   getPublishedSteps,
@@ -27,6 +28,7 @@ export default async function HomePage() {
     services,
     steps,
     settings,
+    heroVideos,
   ] = await Promise.all([
     getProjects(),
     getCategories(),
@@ -35,11 +37,12 @@ export default async function HomePage() {
     getPublishedServices(),
     getPublishedSteps(),
     getSettings(),
+    getHeroVideos(),
   ]);
 
   return (
     <>
-      <Hero settings={settings} />
+      <Hero settings={settings} videos={heroVideos} />
       <Patina projects={patinaProjects} settings={settings} />
       <Work projects={projects} categories={categories} settings={settings} />
       <Services services={services} settings={settings} />
