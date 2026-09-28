@@ -24,29 +24,29 @@ enum ProjectStatus {
 }
 
 model Project {
-  id          String        @id @default(cuid())
-  slug        String        @unique
+  id          String         @id @default(cuid())
+  slug        String         @unique
   name        String
-  location    String        @default("")
-  year        String        @default("")
-  category    String        @default("Residential")
-  scope       String        @default("")
+  location    String         @default("")
+  year        String         @default("")
+  category    String         @default("Residential")
+  scope       String         @default("")
   // Optional — hidden on the public project page when left blank.
-  client      String        @default("")
+  client      String         @default("")
   // Optional — hidden on the public project page when left blank.
-  budget      String        @default("")
-  concept     String        @default("")
+  budget      String         @default("")
+  concept     String         @default("")
   heroImage   String
   beforeImage String?
   afterImage  String?
   // Only PUBLISHED projects appear on the public site.
-  status      ProjectStatus @default(PUBLISHED)
+  status      ProjectStatus  @default(PUBLISHED)
   // Lower numbers show first on the site and in the admin list.
-  sortOrder   Int           @default(0)
+  sortOrder   Int            @default(0)
   gallery     GalleryImage[]
   heroVideos  HeroVideo[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
   @@index([status, sortOrder])
 }
@@ -97,19 +97,22 @@ model Testimonial {
 // the caption row hides what is blank, and "View project" only appears when
 // a project is linked.
 model HeroVideo {
-  id        String        @id @default(cuid())
-  src       String
+  id          String        @id @default(cuid())
+  src         String
+  // Optional portrait cut, used on phones held upright; without one the
+  // landscape clip is cropped to the centre there.
+  srcPortrait String        @default("")
   // A still shown while the video loads; generated from the first frame on
   // upload unless the admin supplies one.
-  poster    String        @default("")
-  caption   String        @default("")
-  note      String        @default("")
-  project   Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  projectId String?
-  status    ProjectStatus @default(PUBLISHED)
-  sortOrder Int           @default(0)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  poster      String        @default("")
+  caption     String        @default("")
+  note        String        @default("")
+  project     Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId   String?
+  status      ProjectStatus @default(PUBLISHED)
+  sortOrder   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   @@index([status, sortOrder])
 }
@@ -163,11 +166,11 @@ model SiteSettings {
   processHeading      String @default("")
   testimonialsHeading String @default("")
 
-  aboutEyebrow      String  @default("")
-  aboutHeading      String  @default("")
-  aboutBody         String  @default("")
-  aboutImage        String  @default("")
-  aboutImageCaption String  @default("")
+  aboutEyebrow      String @default("")
+  aboutHeading      String @default("")
+  aboutBody         String @default("")
+  aboutImage        String @default("")
+  aboutImageCaption String @default("")
   aboutFacts        Json? // [{ label, value }]
 
   ctaEyebrow   String @default("")

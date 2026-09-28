@@ -98,16 +98,17 @@ export default function Hero({ settings = {}, videos = [] }) {
       <div className="relative mx-auto flex min-h-[100svh] w-full max-w-[1600px] flex-col justify-between px-6 pb-7 pt-24 md:px-[6vw] md:pb-9 md:pt-28">
         {hasVideos ? (
           /* ── Headline + clip carousel ──────────────────────────────
-             Stacked on phones/tablets (the frame fills the width at 16:9);
-             from lg the clips sit beside the headline, dropped to its
-             second line so the words stay the first thing read. */
-          <div className="flex flex-col gap-8 pb-8 sm:gap-10 lg:flex-row lg:items-start lg:gap-14">
+             Stacked on phones/tablets: 16:9 across the width, or — held
+             upright — stretched to fill the height left under the
+             headline. From lg the clips sit beside the headline, dropped
+             to its second line so the words stay the first thing read. */
+          <div className="flex flex-col gap-8 pb-8 sm:gap-10 lg:flex-row lg:items-start lg:gap-14 max-lg:portrait:flex-1">
             {headline}
             <motion.div
               initial={reduce ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9, duration: 1 }}
-              className="min-w-0 lg:flex-1 lg:pt-[min(10.5vw,150px)]"
+              className="min-w-0 lg:flex-1 lg:pt-[min(10.5vw,150px)] max-lg:portrait:flex max-lg:portrait:flex-1 max-lg:portrait:flex-col"
             >
               <HeroVideoCarousel videos={videos} />
             </motion.div>

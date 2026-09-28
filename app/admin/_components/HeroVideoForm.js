@@ -75,27 +75,15 @@ function probeVideo(file) {
   });
 }
 
-// `projects`: [{ id, name, status }] for the optional link dropdown.
-export default function HeroVideoForm({ initial, projects = [] }) {
-  const isEdit = Boolean(initial?.id);
-  const [form, setForm] = useState({
-    src: initial?.src || "",
-    poster: initial?.poster || "",
-    caption: initial?.caption || "",
-    note: initial?.note || "",
-    projectId: initial?.projectId || "",
-    status: initial?.status || "PUBLISHED",
-    // False once the admin picks a poster by hand in this form; until then a
-    // new clip brings its own first-frame poster.
-    posterAuto: true,
-  });
+// One video slot: pick → checks → direct-to-Blob upload with progress.
+// `orientation` is what this slot expects, for the warning when a file
+// doesn't match. `onUploaded(url, meta)` also gets the probe (incl. a
+// poster frame).
+function VideoUploadField({ label, hint, value, orientation, onUploaded, onRemove }) {
   const [progress, setProgress] = useState(null); // null = idle, 0–100 = uploading
   const [warnings, setWarnings] = useState([]);
   const [error, setError] = useState("");
-  const [pending, startTransition] = useTransition();
   const inputRef = useRef(null);
-
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const uploading = progress !== null;
 
   async function handleFile(e) {
@@ -121,8 +109,13 @@ export default function HeroVideoForm({ initial, projects = [] }) {
         `This file is ${(file.size / 1024 / 1024).toFixed(1)} MB. Under about 4 MB keeps the homepage fast.`
       );
     }
-    if (meta?.width && meta.height > meta.width) {
-      notes.push("This clip is portrait. The hero frame is landscape 16:9, so it will be cropped heavily.");
+    if (meta?.width && meta?.height) {
+      const isPortrait = meta.height > meta.width;
+      if (orientation === "landscape" && isPortrait) {
+        notes.push("This clip is portrait. This slot is for the landscape version; add it as the portrait version below instead.");
+      } else if (orientation === "portrait" && !isPortrait) {
+        notes.push("This clip is landscape. This slot is for an upright (portrait) version.");
+      }
     }
     if (meta?.duration && (meta.duration < 5 || meta.duration > 20)) {
       notes.push(`This clip is ${Math.round(meta.duration)} s long. 10–15 s works best.`);
@@ -139,19 +132,108 @@ export default function HeroVideoForm({ initial, projects = [] }) {
         multipart: file.size > HEAVY_BYTES,
         onUploadProgress: ({ percentage }) => setProgress(Math.round(percentage)),
       });
-
-      // A new clip gets a fresh poster from its own first frame (an old one
-      // would flash the previous clip). A poster picked by hand is kept.
-      let poster = form.poster;
-      if (meta?.poster && form.posterAuto) {
-        poster = await uploadImage(meta.poster).catch(() => form.poster);
-      }
-      setForm((f) => ({ ...f, src: blob.url, poster }));
+      await onUploaded(blob.url, meta);
     } catch (err) {
       setError(err?.message || "Upload failed");
     } finally {
       setProgress(null);
     }
+  }
+
+  const frame = orientation === "portrait" ? "aspect-[9/16] w-32" : "aspect-video w-full sm:w-80";
+
+  return (
+    <div>
+      <span className="font-mono text-[10px] uppercase tracking-widest2 text-ink/50">{label}</span>
+      <div className="mt-1.5 flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div className={`relative shrink-0 overflow-hidden rounded-xl border border-ink/10 bg-noir ${frame}`}>
+          {value ? (
+            <video
+              key={value}
+              src={value}
+              controls
+              playsInline
+              preload="metadata"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="absolute inset-0 flex items-center justify-center font-mono text-[10px] uppercase tracking-wide text-bone/40">
+              No video
+            </span>
+          )}
+          {uploading && (
+            <div className="absolute inset-x-0 bottom-0 h-1 bg-bone/20">
+              <div className="h-full bg-copper transition-[width]" style={{ width: `${progress}%` }} />
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="rounded-full border border-ink/15 px-3.5 py-2 text-xs text-ink/80 hover:border-ink/40 disabled:opacity-50"
+            >
+              {uploading ? `Uploading… ${progress}%` : value ? "Replace video" : "Choose video"}
+            </button>
+            {value && onRemove && !uploading && (
+              <button
+                type="button"
+                onClick={onRemove}
+                className="rounded-full border border-ink/15 px-3.5 py-2 text-xs text-ink/50 hover:border-ink/40"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+          {hint && <p className="text-[11px] text-ink/40">{hint}</p>}
+          {warnings.map((w) => (
+            <p key={w} className="text-[11px] text-amber-700">{w}</p>
+          ))}
+          {error && <p className="text-[11px] text-red-700">{error}</p>}
+          {value && <p className="truncate font-mono text-[10px] text-ink/35">{value}</p>}
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ACCEPT.join(",")}
+          onChange={handleFile}
+          className="hidden"
+        />
+      </div>
+    </div>
+  );
+}
+
+// `projects`: [{ id, name, status }] for the optional link dropdown.
+export default function HeroVideoForm({ initial, projects = [] }) {
+  const isEdit = Boolean(initial?.id);
+  const [form, setForm] = useState({
+    src: initial?.src || "",
+    srcPortrait: initial?.srcPortrait || "",
+    poster: initial?.poster || "",
+    caption: initial?.caption || "",
+    note: initial?.note || "",
+    projectId: initial?.projectId || "",
+    status: initial?.status || "PUBLISHED",
+    // False once the admin picks a poster by hand in this form; until then a
+    // new clip brings its own first-frame poster.
+    posterAuto: true,
+  });
+  const [error, setError] = useState("");
+  const [pending, startTransition] = useTransition();
+
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  async function onMainUploaded(url, meta) {
+    // A new clip gets a fresh poster from its own first frame (an old one
+    // would flash the previous clip). A poster picked by hand is kept.
+    let poster = form.poster;
+    if (meta?.poster && form.posterAuto) {
+      poster = await uploadImage(meta.poster).catch(() => form.poster);
+    }
+    setForm((f) => ({ ...f, src: url, poster }));
   }
 
   function onSubmit(e) {
@@ -161,6 +243,7 @@ export default function HeroVideoForm({ initial, projects = [] }) {
       const res = await saveHeroVideoAction({
         id: initial?.id,
         src: form.src,
+        srcPortrait: form.srcPortrait,
         poster: form.poster,
         caption: form.caption,
         note: form.note,
@@ -190,61 +273,22 @@ export default function HeroVideoForm({ initial, projects = [] }) {
 
       <StatusSegments value={form.status} onChange={(v) => set("status", v)} />
 
-      <div>
-        <span className={labelText}>Video *</span>
-        <div className="mt-1.5 flex flex-col gap-4 sm:flex-row sm:items-start">
-          <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-xl border border-ink/10 bg-noir sm:w-80">
-            {form.src ? (
-              <video
-                key={form.src}
-                src={form.src}
-                poster={form.poster || undefined}
-                controls
-                muted
-                playsInline
-                preload="metadata"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="absolute inset-0 flex items-center justify-center font-mono text-[10px] uppercase tracking-wide text-bone/40">
-                No video
-              </span>
-            )}
-            {uploading && (
-              <div className="absolute inset-x-0 bottom-0 h-1 bg-bone/20">
-                <div className="h-full bg-copper transition-[width]" style={{ width: `${progress}%` }} />
-              </div>
-            )}
-          </div>
-          <div className="min-w-0 flex-1 space-y-2">
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              disabled={uploading}
-              className="rounded-full border border-ink/15 px-3.5 py-2 text-xs text-ink/80 hover:border-ink/40 disabled:opacity-50"
-            >
-              {uploading ? `Uploading… ${progress}%` : form.src ? "Replace video" : "Choose video"}
-            </button>
-            <p className="text-[11px] text-ink/40">
-              MP4 or WebM, landscape 16:9, 10–15 s. Sound is always muted on the
-              site. Up to 50 MB, but aim for under 4 MB.
-            </p>
-            {warnings.map((w) => (
-              <p key={w} className="text-[11px] text-amber-700">{w}</p>
-            ))}
-            {form.src && (
-              <p className="truncate font-mono text-[10px] text-ink/35">{form.src}</p>
-            )}
-          </div>
-          <input
-            ref={inputRef}
-            type="file"
-            accept={ACCEPT.join(",")}
-            onChange={handleFile}
-            className="hidden"
-          />
-        </div>
-      </div>
+      <VideoUploadField
+        label="Video (landscape) *"
+        hint="MP4 or WebM, landscape 16:9, 10–15 s. It starts muted; visitors can turn the sound on. Up to 50 MB, but aim for under 4 MB."
+        value={form.src}
+        orientation="landscape"
+        onUploaded={onMainUploaded}
+      />
+
+      <VideoUploadField
+        label="Portrait version (optional)"
+        hint="An upright 9:16 cut of the same clip, shown on phones held upright. Without one, the landscape video is cropped to its centre there."
+        value={form.srcPortrait}
+        orientation="portrait"
+        onUploaded={(url) => set("srcPortrait", url)}
+        onRemove={() => set("srcPortrait", "")}
+      />
 
       <ImageField
         label="Poster (optional)"
@@ -300,7 +344,7 @@ export default function HeroVideoForm({ initial, projects = [] }) {
       <div className="flex items-center gap-3 border-t border-ink/10 pt-6">
         <button
           type="submit"
-          disabled={pending || uploading || !form.src}
+          disabled={pending || !form.src}
           className="rounded-full bg-ink px-6 py-3 text-sm text-parchment hover:opacity-90 disabled:opacity-50"
         >
           {pending ? "Saving…" : isEdit ? "Save changes" : "Add video"}

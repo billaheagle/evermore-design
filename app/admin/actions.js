@@ -392,7 +392,7 @@ export async function setStepStatusAction(formData) {
 // ---- hero videos -----------------------------------------------------
 
 // `input` is a plain object from the admin form:
-//   { id?, src, poster, caption, note, projectId, status }
+//   { id?, src, srcPortrait, poster, caption, note, projectId, status }
 // Only `src` is required — a clip can go up with no caption or link.
 export async function saveHeroVideoAction(input) {
   await assertAuthed();
@@ -408,6 +408,7 @@ export async function saveHeroVideoAction(input) {
 
   const data = {
     src,
+    srcPortrait: String(input?.srcPortrait || "").trim(),
     poster: String(input?.poster || "").trim(),
     caption: String(input?.caption || "").trim(),
     note: String(input?.note || "").trim(),
@@ -421,7 +422,9 @@ export async function saveHeroVideoAction(input) {
     await prisma.heroVideo.update({ where: { id }, data });
     if (prev) {
       await deleteUploadedFiles(
-        [prev.src, prev.poster].filter((u) => u && u !== data.src && u !== data.poster)
+        [prev.src, prev.srcPortrait, prev.poster].filter(
+          (u) => u && u !== data.src && u !== data.srcPortrait && u !== data.poster
+        )
       );
     }
   } else {
@@ -444,7 +447,7 @@ export async function deleteHeroVideoAction(formData) {
   const video = await prisma.heroVideo.findUnique({ where: { id } });
   if (!video) return;
   await prisma.heroVideo.delete({ where: { id } });
-  await deleteUploadedFiles([video.src, video.poster]);
+  await deleteUploadedFiles([video.src, video.srcPortrait, video.poster]);
   revalidatePath("/");
   revalidatePath("/admin/hero-videos");
 }

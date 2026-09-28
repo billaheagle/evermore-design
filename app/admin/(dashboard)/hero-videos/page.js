@@ -43,7 +43,7 @@ export default async function HeroVideosAdminPage() {
 
       <p className="mt-4 max-w-2xl text-sm text-ink/55">
         Short clips that play under the homepage headline, in this order.
-        Landscape 16:9, 10–15 seconds, no audio. Keep each file under about
+        Landscape 16:9, 10–15 seconds; they start muted and visitors can turn the sound on. An optional portrait cut is used on upright phones. Keep each file under about
         4 MB so the page stays fast. Caption and project link are optional;
         without a link the &ldquo;View project&rdquo; button is hidden. With
         no live videos, the hero shows the material swatches instead.
